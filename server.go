@@ -3,42 +3,63 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
+	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/gorilla/handlers"
 )
 
-func isChannelLive(channelID string, apiKey string) bool {
-	// Sua lógica real para verificar o status do canal aqui
-
-	// Chame a função isChannelLive que você já possui
-	// Neste exemplo, a lógica é simplificada para retornar true
-	// se o canal estiver online, e false se estiver offline
-	return true // Substitua pela sua lógica real
-}
-
-func checkYouTubeChannelStatus(w http.ResponseWriter, r *http.Request) {
-	// Defina sua lógica real para obter o apiKey e channelID
-	apiKey := "AIzaSyCrr7c6iPUHc-3HrFcowu0j46GwK5Ww3c8"
-	channelID := "@Alternativerock96"
-
-	// Chame a função isChannelLive que você já possui
-	isLive := isChannelLive(channelID, apiKey)
-
-	// Retorne a resposta em formato JSON
-	response := struct {
-		IsLive bool `json:"isLive"`
-	}{
-		IsLive: isLive,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
-}
-
 func main() {
-	r := http.NewServeMux()
-	r.HandleFunc("/checkChannel", checkYouTubeChannelStatus)
-	port := ":8080"
-	fmt.Printf("Servidor Go está ouvindo na porta %s\n", port)
-	http.ListenAndServe(port, r)
+	r := mux.NewRouter()
+	r.HandleFunc("/api/ask", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var requestBody map[string]string
+		err := json.NewDecoder(r.Body).Decode(&requestBody)
+		if err != nil {
+			http.Error(w, "Erro ao decodificar o corpo da solicitação", http.StatusBadRequest)
+			return
+		}
+
+		respostas := []string{
+			"Não sei, foi um junior que me programou",
+			"Desculpe, meu código está agindo estranho hoje. Acho que o desenvolvedor júnior fez algumas alterações.",
+			"Parece que o desenvolvedor júnior mexeu na lógica do sistema novamente. Vou tentar corrigir isso.",
+			"Talvez um dia eu descubra a resposta.",
+			"Essa pergunta me deixou perplexo!",
+			"Oh, não, mais um bug? Deixe-me adivinhar, foi o desenvolvedor júnior, certo?",
+			"O junior que me programou era burro demais para saber esta resposta",
+			"Parece que o desenvolvedor júnior estava \"pensando fora da caixa\" novamente. Vou verificar as consequências disso.",
+			"Desculpe por qualquer inconveniente. O desenvolvedor júnior estava tentando inovar",
+			"Meu desenvolvedor não me programou direito, vou pedir para o @Criascript corrigir isso",
+			"Meu desenvolvedor faltou as aulas online no youtube que ele comprou do AD do youtube, me desculpe",
+			"Pergunta no Posto ipiranga !",
+			"Esta esta no nivel GPT, pergunta uma que seja facil por favor",
+			"não importa a pergunta, o resultado sempre sera 42 !",
+			"Sua pergunta eu nao sei, mas com certeza o google sabe !",
+			"ja tentou ver no google antes de me perguntar algo ?",
+			"verifica se o @Criascript ta aovivo na twitch, talvez ele saiba",
+			"Vou ficar te devendo campeão.",
+			"Antes da resposta me faça um pix de 5 reais, chave=rafael1989longas@gmail.com.",
+			"esta ai é facil demais, manda outra mais dificil",
+		}
+
+		// Escolha uma resposta aleatória.
+		rand.Seed(time.Now().UnixNano())
+		response := map[string]string{"answer": respostas[rand.Intn(len(respostas))]}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	})
+
+	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	methods := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
+	origins := handlers.AllowedOrigins([]string{"http://localhost:5363"}) // Substitua pelo seu domínio Svelte.
+
+	fmt.Println("Servidor rodando na porta 8081...")
+	http.ListenAndServe(":8081", handlers.CORS(headers, methods, origins)(r))
 }
